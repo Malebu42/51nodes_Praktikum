@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.7 <0.9.0; //0.8.12 newest version 0.8.8 maybe
+
+contract SimpleStorage {
+    // boolean, uint, int, address, bytes
+    //only variables inside the specific bracket are visible
+    uint256 public favoriteNumer; //initialised to zero "0"
+    //uint256 public secondfavouritenumber initialised to one "1"
+    //People public person = People({favoriteNumer: 2, name: "Steve"}); //constructor like in java but with ({})
+
+    mapping(string => uint256) public nameToFavouriteNumber; //storing in a asigned place here: string stored to a uint
+
+    //like object in java
+    struct People {
+        uint256 favoriteNumer;
+        string name;
+    }
+
+    People[] public people; //array "0" for one, "1" for two etc
+
+    function store(uint256 _favouriteNumber) public {
+        favoriteNumer =_favouriteNumber;
+    }
+
+    //view and pure costs no gas,but cant change smth
+    function retrieve() public view returns(uint256) { //returns give us smth
+        return favoriteNumer;
+    }
+
+    //calldata(fix temp), memory(var temp), storage (var perm)
+    function addPerson(string memory _name, uint256 _favouriteNumber) public{
+        /*
+        People memory newPerson = People({favoriteNumer: _favouriteNumber, name: _name});
+        people.push(newPerson);
+        */ // old way
+        people.push(People(_favouriteNumber, _name)); //adds a new person to the array
+        nameToFavouriteNumber[_name] = _favouriteNumber; //string name to uint number
+    }
+
+}
+
+//0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
