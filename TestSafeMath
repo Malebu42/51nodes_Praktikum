@@ -1,0 +1,12 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+contract SafeMathTester{
+    uint8 public bigNumber = 255; //unchecked 
+
+    //we create a overflow here
+    function add() public {
+       unchecked{ bigNumber = bigNumber + 1;} //result is larger than storage
+       //uncheckd makes code more gas efficient
+    }
+}
