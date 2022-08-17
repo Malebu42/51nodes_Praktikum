@@ -1,22 +1,30 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.8;
 
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./PriceConverter.sol";
 //note; npm
+
+error NotOwner();
 contract FundMe {
-    
-    uint256 public minimunUsd = 50 * 1e18; //use chainlink / blockchain oracle
+    using PriceConverter for uint256;
+    //constant for cheaper gas price
+    uint256 public constant MINIMUM_USD = 50 * 1e18; //use chainlink / blockchain oracle
     //for funding to a wallet
 
     //who funds?
-    address[] public funders;
+    address[] public  funders; 
     mapping(address => uint256) public addressToAmountFunded;
+
+    address public immutable i_owner; //makes cheaper gas for one time use 
+    constructor () { //gets called at the start
+        i_owner = msg.sender;
+    }
 
     function fund() public payable{
         //minimum fund amount (in ETH)
         
-        require(getConversionRate(msg.value) > minimunUsd, "didn't send enough"); // 1E18 = 1*10**18
+        require(getConversionRate(msg.value) > MINIMUM_USD, "didn't send enough"); // 1E18 = 1*10**18
         funders.push(msg.sender); //for security (msg.sender for who reads, msg.value for the value)
         addressToAmountFunded[msg.sender] = msg.value; // saves values for each sender
         //reverts any remaining gas
@@ -42,7 +50,42 @@ contract FundMe {
         uint256 ethAmountInUsd = (ethPrice * ethAmount) / 1e18;
         return ethAmountInUsd; //calc eth in usd and return
     }
-    //function withdraw() {}
 
-    
-}
+    function withdraw() public onlyOwner {
+        //require(msg.sender == owner, "Sender is not Owner"); //check for owner
+        //for(starting  index, edning index, step amount)
+        for(uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
+            address funder = funders[funderIndex]; //returns funder ddress
+            addressToAmountFunded[funder] = 0;
+        }
+        //reset array
+        funders = new address[](0);
+
+        //transfer
+        //msg.sender = addresss, payable = payable address
+        payable(msg.sender).transfer(address(this).balance); 
+        /*
+        // send
+        bool sendSuccess payable(msg.sender).transfer(address(this).balance); //check for sendable
+        require(sendSuccess, "Send failed");
+        */
+        //call
+        (bool callSuccess, ) = payable(msg.sender).call{value: address(this).balance}("");
+        //returns if the call was success and the call's data
+        require(callSuccess, "Call failed");
+    }
+
+    modifier onlyOwner { //modifier to stick to functions
+        //require(msg.sender == i_owner, "Sender is not Owner"); //require first, then code
+        if(msg.sender != i_owner) {revert NotOwner(); } //save gas
+        _; //_; stands for run code
+    }
+
+    receive() external payable { //makes sure users type in the right things
+        fund();
+    }
+
+    fallback() external payable { //makes sure the user uses fund()
+        fund();
+    }
+ }
