@@ -8,6 +8,7 @@ module.exports.default = deployFunc()
 */
 
 const { networkConfig } = require("../helper-hardhat-config")
+const { network } = require("hardhat")
 //shorter&easier way
 
 module.exports = async (hre) => { //deploy automatic
@@ -16,12 +17,12 @@ module.exports = async (hre) => { //deploy automatic
     const {deployer } = await getNamedAccounts()
     const chainId = network.config.chainId
 
-    const ethUsdPRiceFeedAddress = networkConfig[chainId]["ethUsdpriceFeed"]
+    const ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
     //for mock contracts
 
     const fundMe = await deploy("FundMe", { //deploys contract
         from: deployer,
-        args: [/* address*/], // put price feedaddress in here
+        args: [ethUsdPriceFeedAddress], // put price feedaddress in here
         log: true,
     })
 }
